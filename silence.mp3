@@ -1,0 +1,1 @@
+ffmpeg -f lavfi -i anullsrc=r=44100:cl=2 -t 3600 silence.mp3
