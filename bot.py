@@ -73,3 +73,11 @@ def run():
 # Chạy Flask trên một luồng riêng
 t = threading.Thread(target=run)
 t.start()
+import asyncio
+
+async def keep_alive():
+    while True:
+        print("✅ Bot vẫn hoạt động...")
+        await asyncio.sleep(600)  # 10 phút
+
+bot.loop.create_task(keep_alive())  # Chạy song song với bot
