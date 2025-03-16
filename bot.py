@@ -56,8 +56,10 @@ async def join(ctx, channel_id: int):
 @bot.command()
 async def leave(ctx):
     """Lệnh rời khỏi kênh voice"""
-    if ctx.voice_client:  # Kiểm tra nếu bot đang ở trong kênh voice
-        await ctx.voice_client.disconnect()
+    voice_client = ctx.voice_client  # Lấy voice client hiện tại của bot
+
+    if voice_client and voice_client.is_connected():  # Kiểm tra bot có đang ở voice không
+        await voice_client.disconnect()
         await ctx.send("✅ Bot đã rời khỏi kênh thoại.")
     else:
         await ctx.send("⚠️ Bot không ở trong kênh voice nào.")
