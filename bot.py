@@ -4,6 +4,7 @@ from discord.ext import commands
 import asyncio
 from flask import Flask
 import threading
+import time  # Thêm thư viện time để chống spam
 
 # Lấy token từ biến môi trường
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
@@ -17,6 +18,9 @@ intents.message_content = True  # Cần để bot đọc lệnh
 # Tạo bot
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+# Biến lưu thời gian cảnh báo gần nhất của !leave
+last_warning_time = 0  
+
 @bot.event
 async def on_ready():
     """Khi bot khởi động thành công"""
@@ -24,7 +28,7 @@ async def on_ready():
 
 @bot.command()
 async def join(ctx, channel_id: int):
-    """Lệnh tham gia kênh thoại bằng Channel ID và phát âm thanh trống (không cần file)"""
+    """Lệnh tham gia kênh thoại bằng Channel ID"""
     try:
         channel = bot.get_channel(channel_id)  # Lấy kênh từ ID
 
@@ -37,7 +41,7 @@ async def join(ctx, channel_id: int):
                 await ctx.voice_client.disconnect()  # Rời khỏi kênh cũ trước
             voice_client = await channel.connect()  # Kết nối đến kênh thoại
             
-            # 🔊 Phát âm thanh trống bằng FFmpeg mà không cần file silence.mp3
+            # 🔊 Phát âm thanh trống mà không cần file silence.mp3
             ffmpeg_options = {
                 'before_options': '-f lavfi -i anullsrc',
                 'options': '-vn'
@@ -56,13 +60,18 @@ async def join(ctx, channel_id: int):
 @bot.command()
 async def leave(ctx):
     """Lệnh rời khỏi kênh voice"""
+    global last_warning_time  # Dùng biến toàn cục để kiểm soát cảnh báo
+
     voice_client = ctx.voice_client  # Lấy voice client hiện tại của bot
 
     if voice_client and voice_client.is_connected():  # Kiểm tra bot có đang ở voice không
         await voice_client.disconnect()
         await ctx.send("✅ Bot đã rời khỏi kênh thoại.")
     else:
-        await ctx.send("⚠️ Bot không ở trong kênh voice nào.")
+        current_time = time.time()
+        if current_time - last_warning_time > 5:  # Chỉ gửi cảnh báo mỗi 5 giây
+            await ctx.send("⚠️ Bot không ở trong kênh voice nào.")
+            last_warning_time = current_time  # Cập nhật thời gian cảnh báo gần nhất
 
 # 🌐 Flask giữ bot online
 app = Flask(__name__)
