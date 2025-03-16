@@ -24,7 +24,7 @@ async def on_ready():
 
 @bot.command()
 async def join(ctx, channel_id: int):
-    """Lệnh tham gia kênh thoại bằng Channel ID và phát âm thanh trống"""
+    """Lệnh tham gia kênh thoại bằng Channel ID và phát âm thanh trống (không cần file)"""
     try:
         channel = bot.get_channel(channel_id)  # Lấy kênh từ ID
 
@@ -37,13 +37,13 @@ async def join(ctx, channel_id: int):
                 await ctx.voice_client.disconnect()  # Rời khỏi kênh cũ trước
             voice_client = await channel.connect()  # Kết nối đến kênh thoại
             
-            # Phát âm thanh trống nếu có file
-            silence_path = "silence.mp3"
-            if os.path.exists(silence_path):
-                source = discord.FFmpegPCMAudio(silence_path)
-                voice_client.play(source, after=lambda e: print("🔊 Đang phát âm thanh trống!"))
-            else:
-                print("⚠️ Không tìm thấy file silence.mp3, bot sẽ không phát âm thanh!")
+            # 🔊 Phát âm thanh trống bằng FFmpeg mà không cần file silence.mp3
+            ffmpeg_options = {
+                'before_options': '-f lavfi -i anullsrc',
+                'options': '-vn'
+            }
+            source = discord.FFmpegPCMAudio("dummy", **ffmpeg_options)
+            voice_client.play(source)
 
             await ctx.send(f"✅ Đã tham gia kênh thoại: {channel.name}")
         else:
@@ -56,7 +56,7 @@ async def join(ctx, channel_id: int):
 @bot.command()
 async def leave(ctx):
     """Lệnh rời khỏi kênh voice"""
-    if ctx.voice_client:
+    if ctx.voice_client:  # Kiểm tra nếu bot đang ở trong kênh voice
         await ctx.voice_client.disconnect()
         await ctx.send("✅ Bot đã rời khỏi kênh thoại.")
     else:
